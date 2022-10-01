@@ -1,9 +1,8 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Coin;
 
-use crate::state::{Config};
-use hydrogen::state::ColorSpectrum;
+use crate::state::Config;
 use hydrogen::msg::ContainersResponse;
+use hydrogen::state::Coordinates;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -13,9 +12,13 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     /// Buys a container of hydrogen with specified id
-    Produce {
-        /// Id of hydrogen container
+    Buy {
+        /// Id of the container to buy
         container_id: u64,
+        /// Destination of the shipment
+        destination: String,
+        /// Coordinates of final destination
+        coordinates: Coordinates,
     },
     /// Allows to update address of hydrogen contract
     UpdateConfig {
@@ -29,11 +32,10 @@ pub enum ExecuteMsg {
 pub enum QueryMsg {
     /// Returns current configuration
     #[returns(ConfigResponse)]
-    Config { },
+    Config {},
     /// Returns all containers of hydrogen belonging to that sender
     #[returns(ContainersResponse)]
-    Containers { },
-}
+    Containers {},
 }
 
 #[cw_serde]

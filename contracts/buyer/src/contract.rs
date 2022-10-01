@@ -1,15 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult,
-};
+use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Config, ADMIN, CONFIG};
-use hydrogen::state::ColorSpectrum;
 use hydrogen::msg::ContainersResponse;
+use hydrogen::state::Coordinates;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:buyer";
@@ -45,7 +43,9 @@ pub fn execute(
     match msg {
         ExecuteMsg::Buy {
             container_id,
-        } => execute::buy(deps, info.sender, container_id),
+            destination,
+            coordinates,
+        } => execute::buy(deps, info.sender, container_id, destination, coordinates),
         ExecuteMsg::UpdateConfig {
             new_hydrogen_address,
         } => execute::update_config(deps, info.sender, new_hydrogen_address),
@@ -59,6 +59,8 @@ pub mod execute {
         _deps: DepsMut,
         _sender: Addr,
         _container_id: u64,
+        _destination: String,
+        _coordinates: Coordinates,
     ) -> Result<Response, ContractError> {
         todo!();
     }
@@ -75,8 +77,8 @@ pub mod execute {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config { } => to_binary(&query::config(deps)?),
-        QueryMsg::Containers { } => to_binary(&query::containers(deps)?),
+        QueryMsg::Config {} => to_binary(&query::config(deps)?),
+        QueryMsg::Containers {} => to_binary(&query::containers(deps)?),
     }
 }
 
@@ -85,9 +87,7 @@ pub mod query {
 
     pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
         let config = CONFIG.load(deps.storage)?;
-        Ok(ConfigResponse {
-            config
-        })
+        Ok(ConfigResponse { config })
     }
 
     pub fn containers(deps: Deps) -> StdResult<ContainersResponse> {

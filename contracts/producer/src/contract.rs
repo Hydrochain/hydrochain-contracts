@@ -8,8 +8,8 @@ use cw2::set_contract_version;
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Config, ADMIN, CONFIG};
-use hydrogen::state::ColorSpectrum;
 use hydrogen::msg::ContainersResponse;
+use hydrogen::state::ColorSpectrum;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:producer";
@@ -79,8 +79,8 @@ pub mod execute {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config { } => to_binary(&query::config(deps)?),
-        QueryMsg::Containers { } => to_binary(&query::containers(deps)?),
+        QueryMsg::Config {} => to_binary(&query::config(deps)?),
+        QueryMsg::Containers {} => to_binary(&query::containers(deps)?),
     }
 }
 
@@ -89,9 +89,7 @@ pub mod query {
 
     pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
         let config = CONFIG.load(deps.storage)?;
-        Ok(ConfigResponse {
-            config
-        })
+        Ok(ConfigResponse { config })
     }
 
     pub fn containers(deps: Deps) -> StdResult<ContainersResponse> {
