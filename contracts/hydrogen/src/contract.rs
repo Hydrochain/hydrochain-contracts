@@ -64,22 +64,36 @@ pub mod execute {
     use super::*;
 
     pub fn produce(
-        _deps: DepsMut,
-        _sender: Addr,
-        _color_spectrum: ColorSpectrum,
-        _price: Coin,
-        _volume: u64,
+        deps: DepsMut,
+        sender: Addr,
+        color_spectrum: ColorSpectrum,
+        price: Coin,
+        volume: u64,
     ) -> Result<Response, ContractError> {
+        // let container = HydrogenContainer {
+        //     owner: sender,
+        //     volume,
+        //     color_spectrum,
+        //     price,
+        //     status: Status::,
+        // };
         todo!();
     }
 
     pub fn update_price(
-        _deps: DepsMut,
-        _sender: Addr,
-        _container_id: u64,
-        _new_price: Coin,
+        deps: DepsMut,
+        sender: Addr,
+        container_id: u64,
+        new_price: Coin,
     ) -> Result<Response, ContractError> {
-        todo!();
+        let mut container = CONTAINERS.load(deps.storage, container_id)?;
+        if sender != container.owner {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        container.price = new_price;
+
+        Ok(Response::new())
     }
 
     pub fn buy(
