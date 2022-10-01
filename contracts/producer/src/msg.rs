@@ -1,8 +1,9 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Addr, Coin};
+use cosmwasm_std::Coin;
 
 use crate::state::{Config};
 use hydrogen::state::ColorSpectrum;
+use hydrogen::msg::ContainersResponse;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -33,6 +34,10 @@ pub enum QueryMsg {
     /// Returns current configuration
     #[returns(ConfigResponse)]
     Config { },
+    /// Returns all containers of hydrogen belonging to that sender
+    #[returns(ContainersResponse)]
+    Containers { },
+}
 }
 
 #[cw_serde]

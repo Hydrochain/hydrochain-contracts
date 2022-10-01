@@ -34,9 +34,12 @@ pub enum QueryMsg {
     /// Returns details about containers based on given id
     #[returns(ContainerResponse)]
     Container { container_id: u64 },
-    /// List all currently produced containers
+    /// List all currently kept containers
     #[returns(ContainersResponse)]
     Containers {},
+    /// List all currently kept containers produced by that producer
+    #[returns(ContainersResponse)]
+    ContainersByProducer { producer: String },
 }
 
 #[cw_serde]

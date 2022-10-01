@@ -88,6 +88,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Container { container_id } => to_binary(&query::container(deps, container_id)?),
         QueryMsg::Containers {} => to_binary(&query::containers(deps)?),
+        QueryMsg::ContainersByProducer { producer } => {
+            to_binary(&query::containers_by_producer(deps, producer)?)
+        }
     }
 }
 
@@ -119,6 +122,28 @@ pub mod query {
                 })
             })
             .collect::<StdResult<Vec<ContainerResponse>>>()?;
+        Ok(ContainersResponse { containers })
+    }
+
+    pub fn containers_by_producer(deps: Deps, producer: String) -> StdResult<ContainersResponse> {
+        let producer = deps.api.addr_validate(&producer)?;
+        let containers = CONTAINERS
+            .range(deps.storage, None, None, Order::Ascending)
+            .filter_map(|container| {
+                let (id, hc) = container.ok()?;
+                if hc.producer != producer {
+                    None
+                } else {
+                    Some(ContainerResponse {
+                        producer: hc.producer,
+                        container_id: id,
+                        color_spectrum: hc.color_spectrum,
+                        price: hc.price,
+                        volume: hc.volume,
+                    })
+                }
+            })
+            .collect::<Vec<ContainerResponse>>();
         Ok(ContainersResponse { containers })
     }
 }

@@ -11,4 +11,5 @@ pub struct Config {
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
+/// Admin - creator of contract - is allowed to change configuration
 pub const ADMIN: Item<Addr> = Item::new("admin");

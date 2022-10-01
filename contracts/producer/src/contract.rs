@@ -9,6 +9,7 @@ use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Config, ADMIN, CONFIG};
 use hydrogen::state::ColorSpectrum;
+use hydrogen::msg::ContainersResponse;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:producer";
@@ -79,6 +80,7 @@ pub mod execute {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config { } => to_binary(&query::config(deps)?),
+        QueryMsg::Containers { } => to_binary(&query::containers(deps)?),
     }
 }
 
@@ -90,5 +92,9 @@ pub mod query {
         Ok(ConfigResponse {
             config
         })
+    }
+
+    pub fn containers(deps: Deps) -> StdResult<ContainersResponse> {
+        todo!();
     }
 }
