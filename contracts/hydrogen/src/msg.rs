@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Coin};
 
-use crate::state::ColorSpectrum;
+use crate::state::{ColorSpectrum, Coordinates, Status};
 
 #[cw_serde]
 pub struct InstantiateMsg {}
@@ -24,6 +24,17 @@ pub enum ExecuteMsg {
         /// New price for container
         new_price: Coin,
     },
+    /// Buy container for price that is listed
+    Buy {
+        /// Id of the container to buy
+        container_id: u64,
+        /// Destination of the shipment
+        destination: String,
+        /// Coordinates of final destination
+        coordinates: Coordinates,
+    },
+    /// If container have Shipped status, transfer ownership to the buyer
+    CloseShipment { container_id: u64 },
     /// Allows producer to remove his container
     RemoveContainer { container_id: u64 },
 }
@@ -37,15 +48,15 @@ pub enum QueryMsg {
     /// List all currently kept containers
     #[returns(ContainersResponse)]
     Containers {},
-    /// List all currently kept containers produced by that producer
+    /// List all currently kept containers produced by that owner
     #[returns(ContainersResponse)]
-    ContainersByProducer { producer: String },
+    ContainersByOwner { owner: String },
 }
 
 #[cw_serde]
 pub struct ContainerResponse {
-    /// Address of producer
-    pub producer: Addr,
+    /// Address of current owner
+    pub owner: Addr,
     /// Container ID
     pub container_id: u64,
     /// Quantity in cubic meters
@@ -54,6 +65,8 @@ pub struct ContainerResponse {
     pub color_spectrum: ColorSpectrum,
     /// Price of whole container
     pub price: Coin,
+    /// Current status of container
+    pub status: Status,
 }
 
 #[cw_serde]
