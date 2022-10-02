@@ -172,9 +172,20 @@ pub mod execute {
             return Err(ContractError::ForbiddenLackOfOwnership {});
         }
 
+        let response = match container.status {
+            Status::Shipped(details) => {
+                let return_msg = BankMsg::Send {
+                    to_address: details.buyer.to_string(),
+                    amount: vec![container.price.clone()],
+                };
+                Response::new().add_message(return_msg)
+            }
+            _ => Response::new(),
+        };
+
         CONTAINERS.remove(deps.storage, container_id);
 
-        Ok(Response::new()
+        Ok(response
             .add_attribute("remove", "container")
             .add_attribute("container_id", container_id.to_string()))
     }
