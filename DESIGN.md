@@ -45,14 +45,12 @@ sequenceDiagram
   Contract->>Buyer: Ok(Response)
 ```
 
-
 No tokens are sent along with `buy` message:
 
 ```mermaid
-sequenceDiagram:
+sequenceDiagram
   participant Buyer
   participant Contract
-  participant Producer
   Buyer->>Contract: buy { container_id, destination, coordinates }
   note right of Contract: checks ownership and status (must be Created) and if proper amount was sent
   Contract->>Buyer: Err(NotEnoughTokensSent)
