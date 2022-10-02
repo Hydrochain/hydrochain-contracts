@@ -2,9 +2,10 @@
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
+use cw_utils::ensure_from_older_version;
 
 use crate::error::ContractError;
-use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, MigrateMsg};
 use crate::state::{Config, ADMIN, CONFIG};
 use hydrogen::msg::ContainersResponse;
 use hydrogen::state::Coordinates;
@@ -93,4 +94,11 @@ pub mod query {
     pub fn containers(deps: Deps) -> StdResult<ContainersResponse> {
         todo!();
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    ensure_from_older_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    Ok(Response::default())
 }

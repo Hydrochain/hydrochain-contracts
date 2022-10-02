@@ -43,3 +43,6 @@ pub struct ConfigResponse {
     /// Address of hydrogen contract
     pub config: Config,
 }
+
+#[cw_serde]
+pub struct MigrateMsg {}

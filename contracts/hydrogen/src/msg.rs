@@ -74,3 +74,6 @@ pub struct ContainersResponse {
     /// List of all containers of this producer
     pub containers: Vec<ContainerResponse>,
 }
+
+#[cw_serde]
+pub struct MigrateMsg {}
