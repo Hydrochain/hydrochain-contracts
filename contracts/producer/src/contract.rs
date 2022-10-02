@@ -1,14 +1,14 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult,
+    to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult, WasmMsg, CosmosMsg
 };
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Config, ADMIN, CONFIG};
-use hydrogen::msg::ContainersResponse;
+use hydrogen::msg::{ExecuteMsg::Produce as HydrogenProduceMsg, ContainersResponse};
 use hydrogen::state::ColorSpectrum;
 
 // version info for migration info
@@ -58,13 +58,24 @@ pub mod execute {
     use super::*;
 
     pub fn produce(
-        _deps: DepsMut,
-        _sender: Addr,
-        _color_spectrum: ColorSpectrum,
-        _price: Coin,
-        _volume: u64,
+        deps: DepsMut,
+        sender: Addr,
+        color_spectrum: ColorSpectrum,
+        price: Coin,
+        volume: u64,
     ) -> Result<Response, ContractError> {
-        todo!();
+        let config = CONFIG.load(deps.storage)?;
+
+        let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.hydrogen_contract.to_string(),
+            msg: to_binary(&HydrogenProduceMsg { color_spectrum, price, volume })?,
+            funds: vec![],
+        });
+
+        Ok(Response::new()
+            .add_message(msg)
+            .add_attribute("produce", "contrainer")
+            .add_attribute("sender", &sender))
     }
 
     pub fn update_config(
