@@ -1,13 +1,16 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult,
+    to_binary, Addr, BankMsg, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Order, Response,
+    StdResult,
 };
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ContainerResponse, ContainersResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{ColorSpectrum, Coordinates, CONTAINERS, LAST_ID};
+use crate::state::{
+    ColorSpectrum, Coordinates, HydrogenContainer, ShipmentDetails, Status, CONTAINERS, LAST_ID,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:hydrogen";
@@ -50,7 +53,7 @@ pub fn execute(
             container_id,
             destination,
             coordinates,
-        } => execute::buy(deps, info.sender, container_id, destination, coordinates),
+        } => execute::buy(deps, info, container_id, destination, coordinates),
         ExecuteMsg::CloseShipment { container_id } => {
             execute::close_shipment(deps, info.sender, container_id)
         }
@@ -70,14 +73,22 @@ pub mod execute {
         price: Coin,
         volume: u64,
     ) -> Result<Response, ContractError> {
-        // let container = HydrogenContainer {
-        //     owner: sender,
-        //     volume,
-        //     color_spectrum,
-        //     price,
-        //     status: Status::,
-        // };
-        todo!();
+        let container = HydrogenContainer {
+            owner: sender.clone(),
+            volume,
+            color_spectrum,
+            price,
+            status: Status::Created,
+        };
+
+        let index = LAST_ID.load(deps.storage)?;
+        CONTAINERS.save(deps.storage, index, &container)?;
+
+        LAST_ID.save(deps.storage, &(index + 1))?;
+
+        Ok(Response::new()
+            .add_attribute("produce", "container")
+            .add_attribute("owner", &sender))
     }
 
     pub fn update_price(
@@ -91,35 +102,110 @@ pub mod execute {
             return Err(ContractError::Unauthorized {});
         }
 
-        container.price = new_price;
+        let old_price = container.price.clone();
+        container.price = new_price.clone();
 
-        Ok(Response::new())
+        CONTAINERS.save(deps.storage, container_id, &container)?;
+
+        Ok(Response::new()
+            .add_attribute("price", "update")
+            .add_attribute("container_id", container_id.to_string())
+            .add_attribute("old_price", old_price.amount)
+            .add_attribute("old_denom", old_price.denom)
+            .add_attribute("new_price", new_price.amount)
+            .add_attribute("new_denom", new_price.denom))
     }
 
     pub fn buy(
-        _deps: DepsMut,
-        _sender: Addr,
-        _container_id: u64,
-        _destination: String,
-        _coordinates: Coordinates,
+        deps: DepsMut,
+        info: MessageInfo,
+        container_id: u64,
+        destination: String,
+        coordinates: Coordinates,
     ) -> Result<Response, ContractError> {
-        todo!();
+        let mut container = CONTAINERS.load(deps.storage, container_id)?;
+        if info.sender == container.owner {
+            return Err(ContractError::ProducerCannotBuy {});
+        }
+
+        if container.status == Status::Created {
+            return Err(ContractError::ForbiddenStatusNotCreated {});
+        }
+
+        if info.funds.is_empty() {
+            return Err(ContractError::NoTokensSent {});
+        }
+        if info.funds[0].denom != container.price.denom {
+            return Err(ContractError::BuyDenomDoesntMatchPrice {});
+        }
+        if info.funds[0].amount < container.price.amount {
+            return Err(ContractError::NotEnoughTokensSent {});
+        }
+
+        let transfer_msg = BankMsg::Send {
+            to_address: info.sender.to_string(),
+            amount: info.funds.clone(),
+        };
+
+        let shipment_details = ShipmentDetails {
+            buyer: info.sender.clone(),
+            destination: destination.clone(),
+            coordinates,
+        };
+
+        container.status = Status::Shipped(shipment_details);
+
+        CONTAINERS.save(deps.storage, container_id, &container)?;
+
+        Ok(Response::new()
+            .add_message(transfer_msg)
+            .add_attribute("buy", "container")
+            .add_attribute("container_id", container_id.to_string())
+            .add_attribute("buyer", &info.sender)
+            .add_attribute("destination", &destination))
     }
 
     pub fn remove_container(
-        _deps: DepsMut,
-        _sender: Addr,
-        _container_id: u64,
+        deps: DepsMut,
+        sender: Addr,
+        container_id: u64,
     ) -> Result<Response, ContractError> {
-        todo!();
+        let container = CONTAINERS.load(deps.storage, container_id)?;
+        if sender == container.owner {
+            return Err(ContractError::ForbiddenLackOfOwnership {});
+        }
+
+        CONTAINERS.remove(deps.storage, container_id);
+
+        Ok(Response::new()
+            .add_attribute("remove", "container")
+            .add_attribute("container_id", container_id.to_string()))
     }
 
     pub fn close_shipment(
-        _deps: DepsMut,
-        _sender: Addr,
-        _container_id: u64,
+        deps: DepsMut,
+        sender: Addr,
+        container_id: u64,
     ) -> Result<Response, ContractError> {
-        todo!();
+        let mut container = CONTAINERS.load(deps.storage, container_id)?;
+
+        match container.status {
+            Status::Shipped(details) => {
+                if sender != container.owner || sender != details.buyer {
+                    return Err(ContractError::ForbiddenLackOfOwnership {});
+                }
+            }
+            _ => return Err(ContractError::ForbiddenStatusNotShipped {}),
+        };
+
+        container.status = Status::Delivered;
+
+        CONTAINERS.save(deps.storage, container_id, &container)?;
+
+        Ok(Response::new()
+            .add_attribute("close_shipment", "")
+            .add_attribute("container_id", container_id.to_string())
+            .add_attribute("sender", sender.to_string()))
     }
 }
 

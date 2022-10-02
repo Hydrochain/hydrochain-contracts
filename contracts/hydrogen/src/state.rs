@@ -15,18 +15,18 @@ pub enum ColorSpectrum {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Coordinates {
-    latitude: Decimal,
-    longtitude: Decimal,
+    pub latitude: Decimal,
+    pub longtitude: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct ShipmentDetails {
     /// Address of buyer, to whom ownership will be transferred after delivery
-    buyer: Addr,
+    pub buyer: Addr,
     /// Destination of the shipment
-    destination: String,
+    pub destination: String,
     /// Coordinates of final destination
-    coordinates: Coordinates,
+    pub coordinates: Coordinates,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
