@@ -5,9 +5,12 @@ use cosmwasm_std::{
     StdResult,
 };
 use cw2::set_contract_version;
+use cw_utils::ensure_from_older_version;
 
 use crate::error::ContractError;
-use crate::msg::{ContainerResponse, ContainersResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{
+    ContainerResponse, ContainersResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
+};
 use crate::state::{
     ColorSpectrum, Coordinates, HydrogenContainer, ShipmentDetails, Status, CONTAINERS, LAST_ID,
 };
@@ -275,4 +278,11 @@ pub mod query {
             .collect::<Vec<ContainerResponse>>();
         Ok(ContainersResponse { containers })
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    ensure_from_older_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    Ok(Response::default())
 }
