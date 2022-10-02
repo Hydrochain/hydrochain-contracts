@@ -12,6 +12,9 @@ pub enum ContractError {
     #[error("Producer cannot buy his own containers")]
     ProducerCannotBuy {},
 
+    #[error("Forbidden - only Buyer can close shipment")]
+    ProducerCannotCloseShipment {},
+
     #[error("Forbidden - Sender does not own that container")]
     ForbiddenLackOfOwnership {},
 

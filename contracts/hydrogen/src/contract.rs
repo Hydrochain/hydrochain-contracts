@@ -145,11 +145,6 @@ pub mod execute {
             return Err(ContractError::NotEnoughTokensSent {});
         }
 
-        let transfer_msg = BankMsg::Send {
-            to_address: info.sender.to_string(),
-            amount: info.funds.clone(),
-        };
-
         let shipment_details = ShipmentDetails {
             buyer: info.sender.clone(),
             destination: destination.clone(),
@@ -161,7 +156,6 @@ pub mod execute {
         CONTAINERS.save(deps.storage, container_id, &container)?;
 
         Ok(Response::new()
-            .add_message(transfer_msg)
             .add_attribute("buy", "container")
             .add_attribute("container_id", container_id.to_string())
             .add_attribute("buyer", &info.sender)
@@ -194,11 +188,16 @@ pub mod execute {
 
         match container.status {
             Status::Shipped(details) => {
-                if sender != container.owner || sender != details.buyer {
-                    return Err(ContractError::ForbiddenLackOfOwnership {});
+                if sender != details.buyer {
+                    return Err(ContractError::ProducerCannotCloseShipment {});
                 }
             }
             _ => return Err(ContractError::ForbiddenStatusNotShipped {}),
+        };
+
+        let transfer_msg = BankMsg::Send {
+            to_address: container.owner.to_string(),
+            amount: vec![container.price.clone()],
         };
 
         container.status = Status::Delivered;
@@ -206,6 +205,7 @@ pub mod execute {
         CONTAINERS.save(deps.storage, container_id, &container)?;
 
         Ok(Response::new()
+            .add_message(transfer_msg)
             .add_attribute("close_shipment", "")
             .add_attribute("container_id", container_id.to_string())
             .add_attribute("sender", sender.to_string()))
