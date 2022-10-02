@@ -131,7 +131,7 @@ pub mod execute {
             return Err(ContractError::ProducerCannotBuy {});
         }
 
-        if container.status == Status::Created {
+        if container.status != Status::Created {
             return Err(ContractError::ForbiddenStatusNotCreated {});
         }
 
