@@ -28,9 +28,9 @@ Faulty case
 sequenceDiagram
   participant RandomUser
   participant Contract
-  ContainerOwner->>Contract: update_price { container_id, new_price }
+  RandomUser->>Contract: update_price { container_id, new_price }
   note right of Contract: checks if user is an owner of this container
-  Contarct->>ContainerOwner: Err(Unauthorized)
+  Contarct->>RandomUser: Err(Unauthorized)
 ```
 
 ## Buy
@@ -39,7 +39,6 @@ sequenceDiagram
 sequenceDiagram
   participant Buyer
   participant Contract
-  participant Producer
   Buyer->>Contract: buy { container_id, destination, coordinates } **plus tokens**
   note right of Contract: checks ownership and status (must be Created) and if proper amount was sent
   note right of Contract: changes status of container to Shipped
@@ -68,7 +67,7 @@ sequenceDiagram
   participant Producer
   Producer->>Contract: buy { container_id, destination, coordinates } plus tokens
   note right of Contract: checks ownership and sees container is already owned by Producer
-  Contract->>Buyer: Err(ProducerCannotBuy)
+  Contract->>Producer: Err(ProducerCannotBuy)
 ```
 
 
@@ -93,7 +92,6 @@ Shippment can't be closed unless the Buyer confirms that it's been delivered and
 
 ```mermaid
 sequenceDiagram
-  participant Buyer
   participant Contract
   participant Producer
   Producer->>Contract: close_shipment { container_id }
