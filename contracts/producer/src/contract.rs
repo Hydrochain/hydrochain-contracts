@@ -1,12 +1,13 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult,
+    to_binary, Addr, Binary, Coin, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult
 };
+use cw_utils::ensure_from_older_version;
 use cw2::set_contract_version;
 
 use crate::error::ContractError;
-use crate::msg::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ConfigResponse, ExecuteMsg, MigrateMsg, InstantiateMsg, QueryMsg};
 use crate::state::{Config, ADMIN, CONFIG};
 use hydrogen::msg::ContainersResponse;
 use hydrogen::state::ColorSpectrum;
@@ -95,4 +96,11 @@ pub mod query {
     pub fn containers(deps: Deps) -> StdResult<ContainersResponse> {
         todo!();
     }
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: Deps, _env: Env, _msg: MigrateMsg) -> StdResult<Binary> {
+    ensure_from_older_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    Ok(Response::default())
 }
