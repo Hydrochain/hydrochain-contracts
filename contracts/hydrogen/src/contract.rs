@@ -7,7 +7,9 @@ use cw2::set_contract_version;
 
 use crate::error::ContractError;
 use crate::msg::{ContainerResponse, ContainersResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{ColorSpectrum, Coordinates, CONTAINERS, LAST_ID};
+use crate::state::{
+    ColorSpectrum, Coordinates, HydrogenContainer, ShipmentDetails, Status, CONTAINERS, LAST_ID,
+};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:hydrogen";
@@ -70,14 +72,22 @@ pub mod execute {
         price: Coin,
         volume: u64,
     ) -> Result<Response, ContractError> {
-        // let container = HydrogenContainer {
-        //     owner: sender,
-        //     volume,
-        //     color_spectrum,
-        //     price,
-        //     status: Status::,
-        // };
-        todo!();
+        let container = HydrogenContainer {
+            owner: sender.clone(),
+            volume,
+            color_spectrum,
+            price,
+            status: Status::Created,
+        };
+
+        let index = LAST_ID.load(deps.storage)?;
+        CONTAINERS.save(deps.storage, index, &container)?;
+
+        LAST_ID.save(deps.storage, &(index + 1))?;
+
+        Ok(Response::new()
+            .add_attribute("produce", "container")
+            .add_attribute("owner", &sender))
     }
 
     pub fn update_price(
@@ -91,19 +101,47 @@ pub mod execute {
             return Err(ContractError::Unauthorized {});
         }
 
-        container.price = new_price;
+        let old_price = container.price.clone();
+        container.price = new_price.clone();
 
-        Ok(Response::new())
+        CONTAINERS.save(deps.storage, container_id, &container)?;
+
+        Ok(Response::new()
+            .add_attribute("price", "update")
+            .add_attribute("container_id", container_id.to_string())
+            .add_attribute("old_price", old_price.amount.clone())
+            .add_attribute("old_denom", old_price.denom.clone())
+            .add_attribute("new_price", new_price.amount.clone())
+            .add_attribute("new_denom", new_price.denom.clone()))
     }
 
     pub fn buy(
-        _deps: DepsMut,
-        _sender: Addr,
-        _container_id: u64,
-        _destination: String,
-        _coordinates: Coordinates,
+        deps: DepsMut,
+        sender: Addr,
+        container_id: u64,
+        destination: String,
+        coordinates: Coordinates,
     ) -> Result<Response, ContractError> {
-        todo!();
+        let mut container = CONTAINERS.load(deps.storage, container_id)?;
+        if sender == container.owner {
+            return Err(ContractError::ProducerCannotBuy {});
+        }
+
+        let shipment_details = ShipmentDetails {
+            buyer: sender.clone(),
+            destination: destination.clone(),
+            coordinates,
+        };
+
+        container.status = Status::Shipped(shipment_details);
+
+        CONTAINERS.save(deps.storage, container_id, &container)?;
+
+        Ok(Response::new()
+            .add_attribute("buy", "container")
+            .add_attribute("container_id", container_id.to_string())
+            .add_attribute("buyer", &sender)
+            .add_attribute("destination", &destination))
     }
 
     pub fn remove_container(
