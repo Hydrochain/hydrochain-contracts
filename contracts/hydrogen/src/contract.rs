@@ -127,7 +127,7 @@ pub mod execute {
         coordinates: Coordinates,
     ) -> Result<Response, ContractError> {
         let mut container = CONTAINERS.load(deps.storage, container_id)?;
-        if info.sender == container.owner {
+        if info.sender != container.owner {
             return Err(ContractError::ProducerCannotBuy {});
         }
 
