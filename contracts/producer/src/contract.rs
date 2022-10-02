@@ -79,11 +79,14 @@ pub mod execute {
     }
 
     pub fn update_config(
-        _deps: DepsMut,
-        _sender: Addr,
-        _new_hydrogen_address: String,
+        deps: DepsMut,
+        sender: Addr,
+        new_hydrogen_address: String,
     ) -> Result<Response, ContractError> {
-        todo!();
+        if
+
+        let config = CONFIG.load(deps.storage)?;
+
     }
 }
 
