@@ -217,7 +217,7 @@ pub mod execute {
 
         Ok(Response::new()
             .add_message(transfer_msg)
-            .add_attribute("close_shipment", "")
+            .add_attribute("close", "shipment")
             .add_attribute("container_id", container_id.to_string())
             .add_attribute("sender", sender.to_string()))
     }
